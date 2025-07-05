@@ -1,0 +1,28 @@
+# Node.js dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# dotenv env files
+.env
+.env.local
+.env.*.local
+
+# Log files
+logs
+*.log
+
+# Vite build output
+frontend/dist/
+
+# React cache
+frontend/.vite/
+
+# VSCode settings
+.vscode/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
