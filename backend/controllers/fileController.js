@@ -1,13 +1,14 @@
 const cloudinary = require('../utils/cloudinary');
 const File = require('../models/File');
 
-
-// Upload file
+// Upload file with optional folderId
 exports.uploadFile = async (req, res) => {
   try {
     const result = await cloudinary.uploader.upload(req.file.path, {
       resource_type: 'auto'
     });
+
+    const { folderId } = req.body;
 
     const file = await File.create({
       userId: req.user.id,
@@ -16,6 +17,7 @@ exports.uploadFile = async (req, res) => {
       name: result.original_filename,
       format: result.format,
       size: result.bytes,
+      folderId: folderId || null  // ✅ new: assign to folder if provided
     });
 
     res.status(201).json(file);
@@ -24,8 +26,7 @@ exports.uploadFile = async (req, res) => {
   }
 };
 
-
-// Get All the Files
+// Get All Files for the logged-in user
 exports.getUserFiles = async (req, res) => {
   try {
     const files = await File.find({ userId: req.user.id }).sort({ createdAt: -1 });
@@ -35,8 +36,22 @@ exports.getUserFiles = async (req, res) => {
   }
 };
 
+// ✅ NEW: Get files inside a specific folder
+exports.getFilesByFolder = async (req, res) => {
+  try {
+    const folderId = req.params.folderId;
+    const files = await File.find({
+      userId: req.user.id,
+      folderId: folderId
+    }).sort({ createdAt: -1 });
 
-//Delete files
+    res.json(files);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch files for folder' });
+  }
+};
+
+// Delete a file
 exports.deleteFile = async (req, res) => {
   try {
     const fileId = req.params.id;

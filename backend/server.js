@@ -13,6 +13,8 @@ const authRoutes = require('./routes/authRoutes');
 app.use('/api/auth',authRoutes);
 const fileRoutes = require('./routes/fileRoutes');
 app.use('/api/files', fileRoutes);
+const folderRoutes = require('./routes/folderRoutes');
+app.use('/api/folders', folderRoutes);
 
 
 // DB + Server Start
