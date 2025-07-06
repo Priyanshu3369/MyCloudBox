@@ -70,6 +70,14 @@ export default function Dashboard() {
         >
           Share File
         </button>
+        {user && (
+          <button
+            className="bg-indigo-600 text-white px-4 py-2 rounded"
+            onClick={() => navigate('/upload')}
+          >
+            Go to Upload Page
+          </button>
+        )}
       </div>
     </div>
   );

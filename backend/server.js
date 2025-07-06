@@ -11,6 +11,8 @@ app.use(express.json());
 //Routes
 const authRoutes = require('./routes/authRoutes');
 app.use('/api/auth',authRoutes);
+const fileRoutes = require('./routes/fileRoutes');
+app.use('/api/files', fileRoutes);
 
 
 // DB + Server Start

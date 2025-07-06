@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Home from './pages/Home';
 import { useAuth } from './context/AuthContext';
+import Upload from './pages/Upload';
 
 function App() {
   const { user } = useAuth();
@@ -19,6 +20,7 @@ function App() {
 
       {/* Dashboard: Publicly visible, but actions protected */}
       <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/upload" element={<Upload />} />
     </Routes>
   );
 }
