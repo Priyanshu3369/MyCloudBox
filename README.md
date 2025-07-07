@@ -155,8 +155,3 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 💼 [LinkedIn](https://linkedin.com/in/yourname) | 🌐 [Portfolio](https://your-portfolio.com) | 🐦 [Twitter](https://twitter.com/yourhandle)
 
 ```
-
----
-
-Would you like me to also generate a `.gitignore` file and `LICENSE` for GitHub deployment?
-```
