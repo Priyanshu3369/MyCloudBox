@@ -1,8 +1,3 @@
-Absolutely! Here's the **complete copyable `README.md`** in plain text format – just copy and paste into your `README.md` file:
-
----
-
-```md
 # 📦 MyCloudBox – Secure Cloud File Storage & Sharing App
 
 MyCloudBox is a modern, secure, and beautiful full-stack cloud storage platform where users can:
