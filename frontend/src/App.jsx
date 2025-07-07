@@ -5,12 +5,14 @@ import Dashboard from './pages/Dashboard';
 import Home from './pages/Home';
 import { useAuth } from './context/AuthContext';
 import Upload from './pages/Upload';
-import PublicView from './pages/PublicView';
+import { Navigate } from 'react-router-dom';
 
+function PrivateRoute({ children }) {
+  const { user } = useAuth();
+  return user ? children : <Navigate to="/login" replace />;
+}
 
 function App() {
-  const { user } = useAuth();
-
   return (
     <Routes>
       {/* Public Landing Page */}
@@ -20,10 +22,23 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
-      {/* Dashboard: Publicly visible, but actions protected */}
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/upload" element={<Upload />} />
-      <Route path="/file/:id" element={<PublicView />} />
+      {/* Protected Routes */}
+      <Route
+        path="/dashboard"
+        element={
+          <PrivateRoute>
+            <Dashboard />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/upload"
+        element={
+          <PrivateRoute>
+            <Upload />
+          </PrivateRoute>
+        }
+      />
     </Routes>
   );
 }

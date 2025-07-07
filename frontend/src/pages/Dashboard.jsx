@@ -2,6 +2,10 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { motion } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
@@ -12,7 +16,6 @@ export default function Dashboard() {
   const [activeFolder, setActiveFolder] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Fetch files based on folder
   const fetchFiles = async (folderId = null) => {
     try {
       const url = folderId
@@ -27,7 +30,6 @@ export default function Dashboard() {
     }
   };
 
-  // Fetch folders
   const fetchFolders = async () => {
     try {
       const res = await axios.get('http://localhost:5000/api/folders/my-folders', {
@@ -45,9 +47,8 @@ export default function Dashboard() {
     fetchFolders();
   }, [user]);
 
-  // Create a new folder
   const createFolder = async () => {
-    if (!folderName.trim()) return alert("Please enter a folder name.");
+    if (!folderName.trim()) return toast.error("Please enter a folder name.");
     try {
       const res = await axios.post(
         'http://localhost:5000/api/folders/create',
@@ -56,12 +57,13 @@ export default function Dashboard() {
       );
       setFolders(prev => [res.data, ...prev]);
       setFolderName('');
+      toast.success("Folder created successfully");
     } catch (err) {
       console.error("Folder creation failed:", err);
+      toast.error("Failed to create folder");
     }
   };
 
-  // Rename folder via prompt
   const handleRenameFolder = async (folder) => {
     const newName = prompt("Enter new folder name:", folder.name);
     if (!newName || newName.trim() === folder.name) return;
@@ -71,41 +73,38 @@ export default function Dashboard() {
         { name: newName },
         { headers: { Authorization: `Bearer ${user.token}` } }
       );
-      // Update local folder list
       setFolders((prev) =>
         prev.map((f) => (f._id === folder._id ? res.data.folder : f))
       );
+      toast.success("Folder renamed successfully");
     } catch (err) {
       console.error("Failed to rename folder:", err);
-      alert("Rename failed.");
+      toast.error("Rename failed.");
     }
   };
 
-  // Delete folder with confirmation and cascade option
   const handleDeleteFolder = async (folder) => {
     const confirmDelete = window.confirm(
-      `Delete folder "${folder.name}"?\nPress OK to also delete all files in the folder,\nor Cancel to keep the files (removing folder association).`
+      `Delete folder "${folder.name}"?\nPress OK to also delete all files in the folder,\nor Cancel to keep the files.`
     );
     try {
-      // If confirmed, set query param deleteFiles=true; otherwise, false.
       const deleteFiles = confirmDelete ? 'true' : 'false';
       await axios.delete(
         `http://localhost:5000/api/folders/${folder._id}?deleteFiles=${deleteFiles}`,
         { headers: { Authorization: `Bearer ${user.token}` } }
       );
-      // Remove folder from local list and refresh file list if needed.
       setFolders((prev) => prev.filter((f) => f._id !== folder._id));
       if (activeFolder === folder._id) {
         setActiveFolder('all');
         fetchFiles();
       }
+      toast.success("Folder deleted successfully");
     } catch (err) {
       console.error("Failed to delete folder:", err);
-      alert("Folder deletion failed.");
+      toast.error("Folder deletion failed.");
     }
   };
 
-  // Move file into folder
   const handleMoveFile = async (fileId, folderId) => {
     try {
       const res = await axios.put(
@@ -116,12 +115,13 @@ export default function Dashboard() {
       setFiles((prev) =>
         prev.map((f) => (f._id === fileId ? res.data : f))
       );
+      toast.success("File moved");
     } catch (err) {
       console.error("Failed to move file:", err);
+      toast.error("Failed to move file");
     }
   };
 
-  // Delete file
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this file?")) return;
     try {
@@ -129,19 +129,18 @@ export default function Dashboard() {
         headers: { Authorization: `Bearer ${user.token}` },
       });
       setFiles((prev) => prev.filter((file) => file._id !== id));
+      toast.success("File deleted");
     } catch (err) {
       console.error("Delete failed:", err);
-      alert("Failed to delete file.");
+      toast.error("Failed to delete file");
     }
   };
 
-  // Share link
   const handleShare = (url) => {
     navigator.clipboard.writeText(url);
-    alert("🔗 Link copied to clipboard!");
+    toast.success("🔗 Link copied to clipboard!");
   };
 
-  // Filter files by folder
   const handleFolderClick = (folderId) => {
     setActiveFolder(folderId || 'all');
     fetchFiles(folderId === 'all' ? null : folderId);
@@ -152,7 +151,6 @@ export default function Dashboard() {
     navigate('/');
   };
 
-  // Helper: Get file icon (for thumbnails)
   const getFileIcon = (format) => {
     const type = format.toLowerCase();
     if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(type)) return '🖼️';
@@ -164,162 +162,135 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="p-10 space-y-8">
-      <h1 className="text-2xl font-bold">📁 MyCloudBox Dashboard</h1>
-
-      {/* Welcome Section */}
-      {user ? (
-        <>
-          <p>Welcome back, <strong>{user.user.name}</strong></p>
-          <p>Email: {user.user.email}</p>
-          <button onClick={handleLogout} className="bg-red-600 text-white px-4 py-2 rounded">
-            Logout
-          </button>
-        </>
-      ) : (
-        <button onClick={() => navigate('/login')} className="bg-blue-600 text-white px-4 py-2 rounded">
-          Login
-        </button>
-      )}
-
-      <hr />
-
-      {/* Action Buttons */}
-      <div className="space-x-4">
-        <button className="bg-green-500 text-white px-4 py-2 rounded" onClick={() => navigate('/upload')}>
-          Upload Page
-        </button>
-      </div>
-
-      {/* Folder Section */}
-      {user && (
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold">📂 Folders</h2>
-
-          {/* Create Folder */}
-          <div className="flex gap-2">
-            <input
-              value={folderName}
-              onChange={(e) => setFolderName(e.target.value)}
-              className="border px-3 py-2 rounded w-64"
-              placeholder="New folder name"
-            />
-            <button onClick={createFolder} className="bg-green-600 text-white px-4 py-2 rounded">
-              + Create
-            </button>
-          </div>
-
-          {/* Folder List with Rename/Delete Options */}
-          <div className="flex flex-wrap gap-2 mt-3">
-            <button
-              onClick={() => handleFolderClick('all')}
-              className={`px-3 py-2 border rounded ${activeFolder === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+    <div className="flex flex-col md:flex-row min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-gray-200">
+      {/* Sidebar */}
+      <aside className="w-full md:w-64 backdrop-blur bg-gray-800/80 border-r border-gray-700 p-6 space-y-4 shadow-md">
+        <h2 className="text-lg font-semibold mb-2 text-indigo-400">📁 Folders</h2>
+        <Button
+          size="sm"
+          variant={activeFolder === 'all' ? 'default' : 'ghost'}
+          onClick={() => handleFolderClick('all')}
+          className="w-full justify-start text-gray-200"
+        >
+          📂 All Files
+        </Button>
+        {folders.map(folder => (
+          <div key={folder._id} className="flex items-center justify-between bg-gray-700 rounded-lg px-3 py-2 shadow hover:shadow-md transition">
+            <Button
+              size="sm"
+              variant={activeFolder === folder._id ? 'default' : 'ghost'}
+              onClick={() => handleFolderClick(folder._id)}
+              className="justify-start text-gray-200"
             >
-              📁 All Files
-            </button>
-            {folders.map((folder) => (
-              <div key={folder._id} className="flex items-center gap-1 bg-gray-200 px-2 py-1 rounded">
-                <button
-                  onClick={() => handleFolderClick(folder._id)}
-                  className={`px-2 py-1 rounded ${activeFolder === folder._id ? 'bg-blue-600 text-white' : ''}`}
-                >
-                  📁 {folder.name}
-                </button>
-                <button
-                  onClick={() => handleRenameFolder(folder)}
-                  className="text-sm text-blue-600 hover:underline"
-                >
-                  Rename
-                </button>
-                <button
-                  onClick={() => handleDeleteFolder(folder)}
-                  className="text-sm text-red-600 hover:underline"
-                >
-                  Delete
-                </button>
-              </div>
-            ))}
+              📂 {folder.name}
+            </Button>
+            <div className="flex gap-2 text-xs">
+              <button onClick={() => handleRenameFolder(folder)} className="text-blue-400 hover:underline">Rename</button>
+              <button onClick={() => handleDeleteFolder(folder)} className="text-red-400 hover:underline">Delete</button>
+            </div>
           </div>
+        ))}
+        <Input
+          value={folderName}
+          onChange={(e) => setFolderName(e.target.value)}
+          placeholder="New folder name"
+          className="mt-4 bg-gray-700 text-gray-200 placeholder-gray-400"
+        />
+        <Button size="sm" onClick={createFolder} className="w-full bg-indigo-600 hover:bg-indigo-700">
+          + Create Folder
+        </Button>
+      </aside>
+
+      {/* Main content */}
+      <main className="flex-1 p-8 space-y-8">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h1 className="text-3xl font-extrabold text-indigo-400">MyCloudBox</h1>
+              <p className="text-sm text-gray-300">Hello, <strong>{user?.user?.name}</strong></p>
+              <p className="text-xs text-gray-500">{user?.user?.email}</p>
+            </div>
+            <Button variant="destructive" onClick={handleLogout}>Logout</Button>
+          </div>
+        </motion.div>
+
+        <div className="flex flex-col md:flex-row md:items-center gap-4">
+          <Input
+            type="text"
+            placeholder="🔍 Search files..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full md:w-1/2 bg-gray-700 text-gray-200 placeholder-gray-400"
+          />
+          <Button onClick={() => navigate('/upload')} className="bg-green-600 hover:bg-green-700">
+            + Upload File
+          </Button>
         </div>
-      )}
 
-      {/* Files Section */}
-      {user && (
-        <div>
-          <h2 className="text-xl font-semibold mb-4">
-            📄 Files in {activeFolder === 'all' ? "All Folders" : "Selected Folder"}
-          </h2>
-
-          <div className="my-4">
-            <input
-              type="text"
-              placeholder="🔍 Search files..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full md:w-1/2 px-4 py-2 border rounded shadow"
-            />
-          </div>
-
-          {files.length === 0 ? (
-            <p className="text-gray-500">No files uploaded.</p>
-          ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {files
-                .filter((file) =>
-                  file.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  file.format.toLowerCase().includes(searchTerm.toLowerCase())
-                )
-                .map((file) => (
-                  <div key={file._id} className="border rounded-lg p-4 bg-gray-50 shadow-sm hover:shadow-md transition">
-                    <div className="flex items-center gap-4">
-                      <span className="text-4xl">{getFileIcon(file.format)}</span>
-                      <div>
-                        <p className="font-semibold">{file.name}</p>
-                        <p className="text-sm text-gray-600">{file.format.toUpperCase()}</p>
-                        <p className="text-xs text-gray-400">{new Date(file.createdAt).toLocaleString()}</p>
-                      </div>
-                    </div>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <a
-                        href={file.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="bg-blue-500 text-white px-3 py-1 rounded"
-                      >
-                        Open
-                      </a>
-                      <button
-                        onClick={() => handleShare(file.url)}
-                        className="bg-purple-500 text-white px-3 py-1 rounded"
-                      >
-                        Share
-                      </button>
-                      <button
-                        onClick={() => handleDelete(file._id)}
-                        className="bg-red-500 text-white px-3 py-1 rounded"
-                      >
-                        Delete
-                      </button>
-                      {/* Move file dropdown */}
-                      <select
-                        defaultValue={file.folder || ""}
-                        onChange={(e) => handleMoveFile(file._id, e.target.value)}
-                        className="border px-2 py-1 rounded"
-                      >
-                        <option value="">No Folder</option>
-                        {folders.map((folder) => (
-                          <option key={folder._id} value={folder._id}>
-                            Move to ➜ {folder.name}
-                          </option>
-                        ))}
-                      </select>
+        {files.length === 0 ? (
+          <p className="text-gray-400">No files uploaded yet.</p>
+        ) : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {files
+              .filter((file) =>
+                file.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                file.format.toLowerCase().includes(searchTerm.toLowerCase())
+              )
+              .map((file) => (
+                <motion.div
+                  key={file._id}
+                  className="border border-gray-700 rounded-2xl p-6 bg-gray-800 shadow hover:shadow-lg transition"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <div className="flex items-center gap-4">
+                    <span className="text-4xl">{getFileIcon(file.format)}</span>
+                    <div>
+                      <p className="font-semibold text-gray-200">{file.name}</p>
+                      <p className="text-sm text-gray-400">{file.format.toUpperCase()}</p>
+                      <p className="text-xs text-gray-500">{new Date(file.createdAt).toLocaleString()}</p>
                     </div>
                   </div>
-                ))}
-            </div>
-          )}
-        </div>
-      )}
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <a
+                      href={file.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-full text-sm"
+                    >
+                      Open
+                    </a>
+                    <button
+                      onClick={() => handleShare(file.url)}
+                      className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded-full text-sm"
+                    >
+                      Share
+                    </button>
+                    <button
+                      onClick={() => handleDelete(file._id)}
+                      className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-full text-sm"
+                    >
+                      Delete
+                    </button>
+                    <select
+                      defaultValue={file.folder || ""}
+                      onChange={(e) => handleMoveFile(file._id, e.target.value)}
+                      className="bg-gray-700 text-gray-200 border px-2 py-1 rounded-full text-sm"
+                    >
+                      <option value="">No Folder</option>
+                      {folders.map((folder) => (
+                        <option key={folder._id} value={folder._id}>
+                          ➜ {folder.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </motion.div>
+              ))}
+          </div>
+        )}
+      </main>
     </div>
   );
 }
