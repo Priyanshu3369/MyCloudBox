@@ -1,30 +1,45 @@
 const cloudinary = require('../utils/cloudinary');
 const File = require('../models/File');
+const fs = require('fs');
+const path = require('path');
 
-// Upload file with optional folderId
+
 exports.uploadFile = async (req, res) => {
   try {
+    const { folderId, customName } = req.body;
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file provided' });
+    }
+
+    // Upload to Cloudinary
     const result = await cloudinary.uploader.upload(req.file.path, {
-      resource_type: 'auto'
+      resource_type: 'auto',
+      folder: 'mycloudbox', // optional folder name in Cloudinary
+      public_id: customName || path.parse(req.file.originalname).name,
     });
 
-    const { folderId } = req.body;
+    // Remove the temp file from local uploads folder
+    fs.unlinkSync(req.file.path);
 
+    // Save to MongoDB
     const file = await File.create({
       userId: req.user.id,
       public_id: result.public_id,
       url: result.secure_url,
-      name: result.original_filename,
+      name: customName || result.original_filename,
       format: result.format,
       size: result.bytes,
-      folderId: folderId || null  // ✅ new: assign to folder if provided
+      folderId: folderId || null,
     });
 
     res.status(201).json(file);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Upload failed:', err);
+    res.status(500).json({ error: 'File upload failed' });
   }
 };
+
 
 // Get All Files for the logged-in user
 exports.getUserFiles = async (req, res) => {
@@ -120,5 +135,34 @@ exports.deleteFile = async (req, res) => {
   } catch (err) {
     console.error("🔥 Server error during file delete:", err);
     res.status(500).json({ error: 'Failed to delete file' });
+  }
+};
+
+// ✅ Rename a file
+exports.renameFile = async (req, res) => {
+  try {
+    const fileId = req.params.id;
+    const { name } = req.body;
+
+    if (!name || name.trim() === '') {
+      return res.status(400).json({ error: "New name is required" });
+    }
+
+    const file = await File.findById(fileId);
+    if (!file) {
+      return res.status(404).json({ error: "File not found" });
+    }
+
+    if (file.userId.toString() !== req.user.id) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    file.name = name.trim();
+    await file.save();
+
+    res.json({ message: "File renamed successfully", file });
+  } catch (err) {
+    console.error("❌ Rename failed:", err);
+    res.status(500).json({ error: "Failed to rename file" });
   }
 };

@@ -57,7 +57,7 @@ export default function Dashboard() {
       );
       setFolders(prev => [res.data, ...prev]);
       setFolderName('');
-      toast.success("Folder created successfully");
+      toast.success("📁 Folder created successfully");
     } catch (err) {
       console.error("Folder creation failed:", err);
       toast.error("Failed to create folder");
@@ -65,8 +65,8 @@ export default function Dashboard() {
   };
 
   const handleRenameFolder = async (folder) => {
-    const newName = prompt("Enter new folder name:", folder.name);
-    if (!newName || newName.trim() === folder.name) return;
+    const newName = prompt("✏️ Enter new folder name:", folder.name);
+    if (!newName || newName.trim() === folder.name) return toast.warning("Rename cancelled.");
     try {
       const res = await axios.put(
         `http://localhost:5000/api/folders/rename/${folder._id}`,
@@ -76,33 +76,38 @@ export default function Dashboard() {
       setFolders((prev) =>
         prev.map((f) => (f._id === folder._id ? res.data.folder : f))
       );
-      toast.success("Folder renamed successfully");
+      toast.success("✅ Folder renamed successfully");
     } catch (err) {
-      console.error("Failed to rename folder:", err);
-      toast.error("Rename failed.");
+      console.error("Rename failed:", err);
+      toast.error("Failed to rename folder");
     }
   };
 
   const handleDeleteFolder = async (folder) => {
-    const confirmDelete = window.confirm(
-      `Delete folder "${folder.name}"?\nPress OK to also delete all files in the folder,\nor Cancel to keep the files.`
-    );
-    try {
-      const deleteFiles = confirmDelete ? 'true' : 'false';
-      await axios.delete(
-        `http://localhost:5000/api/folders/${folder._id}?deleteFiles=${deleteFiles}`,
-        { headers: { Authorization: `Bearer ${user.token}` } }
-      );
-      setFolders((prev) => prev.filter((f) => f._id !== folder._id));
-      if (activeFolder === folder._id) {
-        setActiveFolder('all');
-        fetchFiles();
+    toast.promise(
+      new Promise(async (resolve, reject) => {
+        try {
+          const deleteFiles = true;
+          await axios.delete(
+            `http://localhost:5000/api/folders/${folder._id}?deleteFiles=${deleteFiles}`,
+            { headers: { Authorization: `Bearer ${user.token}` } }
+          );
+          setFolders((prev) => prev.filter((f) => f._id !== folder._id));
+          if (activeFolder === folder._id) {
+            setActiveFolder('all');
+            fetchFiles();
+          }
+          resolve();
+        } catch (err) {
+          reject();
+        }
+      }),
+      {
+        loading: `Deleting folder "${folder.name}"...`,
+        success: `Folder "${folder.name}" deleted successfully.`,
+        error: `Failed to delete folder.`,
       }
-      toast.success("Folder deleted successfully");
-    } catch (err) {
-      console.error("Failed to delete folder:", err);
-      toast.error("Folder deletion failed.");
-    }
+    );
   };
 
   const handleMoveFile = async (fileId, folderId) => {
@@ -115,24 +120,50 @@ export default function Dashboard() {
       setFiles((prev) =>
         prev.map((f) => (f._id === fileId ? res.data : f))
       );
-      toast.success("File moved");
+      toast.success("📦 File moved successfully");
     } catch (err) {
-      console.error("Failed to move file:", err);
+      console.error("Move failed:", err);
       toast.error("Failed to move file");
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this file?")) return;
+    toast.promise(
+      new Promise(async (resolve, reject) => {
+        try {
+          await axios.delete(`http://localhost:5000/api/files/${id}`, {
+            headers: { Authorization: `Bearer ${user.token}` },
+          });
+          setFiles((prev) => prev.filter((file) => file._id !== id));
+          resolve();
+        } catch (err) {
+          reject();
+        }
+      }),
+      {
+        loading: "Deleting file...",
+        success: "🗑️ File deleted successfully",
+        error: "Failed to delete file",
+      }
+    );
+  };
+
+  const handleRenameFile = async (file) => {
+    const newName = prompt("✏️ Enter new file name (without extension):", file.name);
+    if (!newName || newName.trim() === file.name) return toast.warning("Rename cancelled.");
     try {
-      await axios.delete(`http://localhost:5000/api/files/${id}`, {
-        headers: { Authorization: `Bearer ${user.token}` },
-      });
-      setFiles((prev) => prev.filter((file) => file._id !== id));
-      toast.success("File deleted");
+      const res = await axios.put(
+        `http://localhost:5000/api/files/rename/${file._id}`,
+        { name: newName },
+        { headers: { Authorization: `Bearer ${user.token}` } }
+      );
+      setFiles((prev) =>
+        prev.map((f) => (f._id === file._id ? res.data.file : f))
+      );
+      toast.success("✅ File renamed successfully");
     } catch (err) {
-      console.error("Delete failed:", err);
-      toast.error("Failed to delete file");
+      console.error("Rename failed:", err);
+      toast.error("Failed to rename file");
     }
   };
 
@@ -152,12 +183,14 @@ export default function Dashboard() {
   };
 
   const getFileIcon = (format) => {
-    const type = format.toLowerCase();
+    const type = (format || '').toLowerCase();
+
     if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(type)) return '🖼️';
     if (['mp4', 'mov', 'avi', 'webm'].includes(type)) return '🎞️';
     if (['pdf'].includes(type)) return '📄';
     if (['doc', 'docx'].includes(type)) return '📝';
-    if (['zip', 'rar'].includes(type)) return '📦';
+    if (['zip', 'rar', '7z'].includes(type)) return '📦';
+    if (['txt'].includes(type)) return '📑';
     return '📁';
   };
 
@@ -210,7 +243,6 @@ export default function Dashboard() {
               <p className="text-sm text-gray-300">Hello, <strong>{user?.user?.name}</strong></p>
               <p className="text-xs text-gray-500">{user?.user?.email}</p>
             </div>
-            <Button variant="destructive" onClick={handleLogout}>Logout</Button>
           </div>
         </motion.div>
 
@@ -248,7 +280,7 @@ export default function Dashboard() {
                     <span className="text-4xl">{getFileIcon(file.format)}</span>
                     <div>
                       <p className="font-semibold text-gray-200">{file.name}</p>
-                      <p className="text-sm text-gray-400">{file.format.toUpperCase()}</p>
+                      <p className="text-sm text-gray-400">{(file.format || 'unknown').toUpperCase()}</p>
                       <p className="text-xs text-gray-500">{new Date(file.createdAt).toLocaleString()}</p>
                     </div>
                   </div>
@@ -266,6 +298,12 @@ export default function Dashboard() {
                       className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded-full text-sm"
                     >
                       Share
+                    </button>
+                    <button
+                      onClick={() => handleRenameFile(file)}
+                      className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded-full text-sm"
+                    >
+                      Rename
                     </button>
                     <button
                       onClick={() => handleDelete(file._id)}

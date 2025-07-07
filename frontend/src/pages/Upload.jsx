@@ -11,6 +11,7 @@ export default function Upload() {
   const [folders, setFolders] = useState([]);
   const [selectedFolder, setSelectedFolder] = useState('');
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [customName, setCustomName] = useState('');
   const dropRef = useRef();
   const navigate = useNavigate();
 
@@ -29,6 +30,12 @@ export default function Upload() {
     if (user) fetchFolders();
   }, [user]);
 
+  // ✅ Supported MIME check
+  const isSupportedFormat = (file) => {
+    const supportedTypes = ['image/', 'video/'];
+    return supportedTypes.some((type) => file.type.startsWith(type));
+  };
+
   const handleUpload = async (e) => {
     e.preventDefault();
 
@@ -38,13 +45,21 @@ export default function Upload() {
       return;
     }
 
-    if (!file) {
-      toast.error('Please choose or drag a file first.');
+    if (!file || !customName) {
+      toast.error('Please choose a file and enter a custom name.');
       return;
     }
 
+    if (!isSupportedFormat(file)) {
+      toast.error('❌ Unsupported file format. Only images and videos are allowed.');
+      return;
+    }
+
+    const fileExt = file.name.split('.').pop();
+    const renamedFile = new File([file], `${customName}.${fileExt}`, { type: file.type });
+
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', renamedFile);
     if (selectedFolder) formData.append('folderId', selectedFolder);
 
     try {
@@ -59,7 +74,7 @@ export default function Upload() {
         },
       });
       setUploaded(res.data);
-      toast.success('File uploaded successfully!');
+      toast.success('✅ File uploaded successfully!');
     } catch (err) {
       console.error('Upload error:', err);
       toast.error('Upload failed.');
@@ -69,10 +84,18 @@ export default function Upload() {
   const handleDrop = (e) => {
     e.preventDefault();
     const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile) {
-      setFile(droppedFile);
-      toast.success(`📂 File "${droppedFile.name}" ready to upload`);
+
+    if (!droppedFile) return;
+
+    if (!isSupportedFormat(droppedFile)) {
+      toast.error('❌ Unsupported file format. Only images and videos are allowed.');
+      return;
     }
+
+    setFile(droppedFile);
+    const defaultName = droppedFile.name.split('.').slice(0, -1).join('.');
+    setCustomName(defaultName);
+    toast.success(`📂 File "${droppedFile.name}" ready to upload`);
   };
 
   const handleDragOver = (e) => e.preventDefault();
@@ -104,9 +127,33 @@ export default function Upload() {
         {/* File Input */}
         <input
           type="file"
-          onChange={(e) => setFile(e.target.files[0])}
+          accept="image/*,video/*"
+          onChange={(e) => {
+            const selected = e.target.files[0];
+            if (!selected) return;
+
+            if (!isSupportedFormat(selected)) {
+              toast.error('❌ Unsupported file format. Only images and videos are allowed.');
+              return;
+            }
+
+            setFile(selected);
+            setCustomName(selected.name.split('.').slice(0, -1).join('.'));
+          }}
           className="block w-full p-3 rounded-lg border border-gray-600 bg-gray-800 text-gray-100"
         />
+
+        {/* Custom Name Input */}
+        {file && (
+          <input
+            type="text"
+            placeholder="Enter custom file name"
+            value={customName}
+            onChange={(e) => setCustomName(e.target.value)}
+            className="block w-full p-3 rounded-lg border border-gray-600 bg-gray-800 text-gray-100"
+            required
+          />
+        )}
 
         {/* Folder Selection */}
         <select
