@@ -26,9 +26,9 @@ export default function Navbar() {
 
       {/* Links */}
       <div className="flex items-center gap-4 text-gray-300 text-sm">
-        <Link to="/" className="hover:text-indigo-400 transition">Home</Link>
         {user && (
           <>
+            <Link to="/" className="hover:text-indigo-400 transition">Home</Link>
             <Link to="/dashboard" className="hover:text-indigo-400 transition">Dashboard</Link>
             <Link to="/upload" className="hover:text-indigo-400 transition">Upload</Link>
           </>

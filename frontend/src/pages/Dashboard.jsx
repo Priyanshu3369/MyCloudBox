@@ -241,7 +241,6 @@ export default function Dashboard() {
             <div>
               <h1 className="text-3xl font-extrabold text-indigo-400">MyCloudBox</h1>
               <p className="text-sm text-gray-300">Hello, <strong>{user?.user?.name}</strong></p>
-              <p className="text-xs text-gray-500">{user?.user?.email}</p>
             </div>
           </div>
         </motion.div>
@@ -311,18 +310,6 @@ export default function Dashboard() {
                     >
                       Delete
                     </button>
-                    <select
-                      defaultValue={file.folder || ""}
-                      onChange={(e) => handleMoveFile(file._id, e.target.value)}
-                      className="bg-gray-700 text-gray-200 border px-2 py-1 rounded-full text-sm"
-                    >
-                      <option value="">No Folder</option>
-                      {folders.map((folder) => (
-                        <option key={folder._id} value={folder._id}>
-                          ➜ {folder.name}
-                        </option>
-                      ))}
-                    </select>
                   </div>
                 </motion.div>
               ))}

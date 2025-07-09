@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
+import { useAuth } from '../context/AuthContext';
 
 export default function Home() {
+  const { user } = useAuth();
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-gray-200 relative">
       {/* Blurred Blobs */}
@@ -83,9 +85,9 @@ export default function Home() {
           <p className="text-gray-400 mb-6">
             Join thousands who trust MyCloudBox to manage their digital life.
           </p>
-          <Link to="/register">
+          <Link to={user ? "/dashboard" : "/register"}>
             <Button className="px-8 py-3 text-lg bg-indigo-600 hover:bg-indigo-700 rounded-xl">
-              Get Started Free
+              {user ? "Go to Dashboard" : "Get Started Free"}
             </Button>
           </Link>
         </motion.div>
