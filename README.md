@@ -141,5 +141,3 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 
 **Priyanshu Chourasiya**
 💼 [LinkedIn](https://www.linkedin.com/in/priyanshu-chourasiya-1b54ab253/)
-
-```
