@@ -53,38 +53,26 @@ MyCloudBox is a modern, secure, and beautiful full-stack cloud storage platform 
 ```
 
 mycloudbox/
-├── client/            # React frontend
+├── frontend/            # React frontend
 │   └── src/
 │       ├── pages/     # Dashboard, Upload, Login, Register, etc.
 │       ├── components/
 │       ├── context/   # AuthContext
 │       ├── App.jsx
 │       └── main.jsx
-├── server/            # Express backend
+├── backend/            # Express backend
 │   ├── controllers/
 │   ├── routes/
 │   ├── models/
 │   ├── middleware/
 │   ├── utils/         # cloudinary.js, multer.js
-│   └── server.js
+│   └── backend.js
 
 ```
 
----
-
-## 📸 Screenshots
-
-| Login & Register | Dashboard & Upload |
-|------------------|--------------------|
-| ![Login](screenshots/login.png) | ![Dashboard](screenshots/dashboard.png) |
-
-> Add screenshots in a `screenshots/` folder and update paths above.
-
----
-
 ## 🔐 .env Setup
 
-### On Backend (`server/.env`)
+### On Backend (`backend/.env`)
 ```
 
 PORT=5000
@@ -92,7 +80,7 @@ MONGO\_URI=your\_mongodb\_connection
 CLOUDINARY\_CLOUD\_NAME=your\_cloud\_name
 CLOUDINARY\_API\_KEY=your\_key
 CLOUDINARY\_API\_SECRET=your\_secret
-CLIENT\_URL=[http://localhost:5173](http://localhost:5173)
+frontend\_URL=[http://localhost:5173](http://localhost:5173)
 
 ````
 
@@ -106,23 +94,23 @@ git clone https://github.com/your-username/mycloudbox.git
 cd mycloudbox
 ````
 
-### 2. Install server & client dependencies
+### 2. Install backend & frontend dependencies
 
 ```bash
 # In root folder
-cd server && npm install
-cd ../client && npm install
+cd backend && npm install
+cd ../frontend && npm install
 ```
 
 ### 3. Start backend & frontend
 
 ```bash
-# Start server
-cd server
-npm run dev
+# Start backend
+cd backend
+nodemon backend.js
 
 # Start frontend
-cd ../client
+cd ../frontend
 npm run dev
 ```
 
@@ -130,8 +118,8 @@ npm run dev
 
 ## 🌍 Deployment
 
-* Backend: [Render](https://render.com/) / [Railway](https://railway.app/)
-* Frontend: [Vercel](https://vercel.com/) / [Netlify](https://netlify.com/)
+* Backend: [Render](https://render.com/)
+* Frontend: [Render](https://render.com/)
 * MongoDB: [MongoDB Atlas](https://cloud.mongodb.com/)
 * Cloud Storage: [Cloudinary](https://cloudinary.com/)
 
@@ -152,6 +140,6 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 ## 🧑‍💻 Developer
 
 **Priyanshu Chourasiya**
-💼 [LinkedIn](https://linkedin.com/in/yourname) | 🌐 [Portfolio](https://your-portfolio.com) | 🐦 [Twitter](https://twitter.com/yourhandle)
+💼 [LinkedIn](https://www.linkedin.com/in/priyanshu-chourasiya-1b54ab253/)
 
 ```
